@@ -27,7 +27,7 @@ The key change in both cases is pointing Entra's **Well-known endpoint** at the 
 
 ---
 
-## Option 1 — Easy: Use the Hosted Proxy
+## Option 1 — Easy: Use the Hosted Proxy (Development/Less Secure Applications)
 
 A hosted instance of this proxy is already running. You just need to update your Entra Google identity provider configuration to point to it.
 
@@ -39,7 +39,7 @@ A hosted instance of this proxy is already running. You just need to update your
 
 | Field | Value |
 |---|---|
-| Well-known endpoint | `[PROXY_URL]/api/well-known/openid-configuration` |
+| Well-known endpoint | `https://google-auth-proxy.jmatthewyoung.com/api/well-known/openid-configuration` |
 | Issuer URI | `https://accounts.google.com` |
 | Client ID | *(your Client ID from Google Cloud Console)* |
 | Client Authentication Method | Client secret |
@@ -55,7 +55,7 @@ A hosted instance of this proxy is already running. You just need to update your
 
 ---
 
-## Option 2 — Self-Hosted: Deploy Your Own Proxy
+## Option 2 — Self-Hosted: Deploy Your Own Proxy (Production/Best Practice)
 
 Use this repository to deploy your own instance of the proxy to Azure Functions. This gives you full control over the infrastructure.
 
