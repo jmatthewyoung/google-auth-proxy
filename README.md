@@ -5,6 +5,14 @@ A fix for the `Error 400: invalid_request — Parameter not allowed for this mes
 
 ---
 
+## Hosted Instance
+
+A hosted instance of this proxy is available at **https://google-auth-proxy.jmatthewyoung.com**. It runs directly off this source code and does not log, store, or inspect any data from proxied requests — it only strips the `username` parameter and redirects.
+
+That said, for production applications it is always best practice to host this yourself so you are not depending on a third-party service for your authentication flow. Instructions for that are in Option 2 below.
+
+---
+
 ## The Problem
 
 When you configure Google as a federated identity provider in Microsoft Entra External ID and a user tries to sign in through a SignInSignUp user flow, the login fails with:
