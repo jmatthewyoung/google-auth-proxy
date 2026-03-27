@@ -42,8 +42,13 @@ A hosted instance of this proxy is already running. You just need to update your
 ### Steps
 
 1. In the [Azure Portal](https://portal.azure.com), go to **Entra External ID → External Identities → All identity providers**.
-2. Find your **Google** identity provider and open it (or add one if you haven't yet).
-3. Fill in the settings as follows:
+2. Select the **Custom** tab — do **not** use the built-in Google identity provider listed on the default tab. The built-in one does not allow you to override the well-known endpoint, which is what this proxy requires.
+3. Click **Add new → OpenID Connect**.
+
+![Add new OpenID Connect provider in Entra](./custom-penidconnect-screenshot.jpg)
+*[Source: Microsoft Learn — Custom OIDC federation for Entra External ID](https://learn.microsoft.com/en-us/entra/external-id/customers/how-to-custom-oidc-federation-customers)*
+
+4. Fill in the settings as follows. Setting the **Display name** to `Google` means the button on your sign-in page will read "Sign in with Google".
 
 | Field | Value |
 |---|---|
