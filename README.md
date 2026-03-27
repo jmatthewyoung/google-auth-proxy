@@ -25,6 +25,10 @@ This happens because Entra automatically appends a `username` parameter to the O
 
 Direct "Sign in with Google" flows work fine — the issue is specific to Entra-orchestrated flows.
 
+![Error 400 Request: flowName=GeneralOAuthFlow](./google-error-1.png)
+![Parameter not allowed for this message type: username](./google-error-2.png)
+*[Source: Microsoft Q&A — Encountering 400 invalid_request error during the Entra SignInSignUp user flow](https://learn.microsoft.com/en-us/answers/questions/5772507/encountering-400-invalid-request-error-during-the?source=docs)*
+
 ---
 
 ## The Fix
