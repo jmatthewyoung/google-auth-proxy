@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find . -maxdepth 3 -type d ! -path ./.vs/* ! -path */bin/* ! -path */obj/*)"
+    ]
+  }
+}
