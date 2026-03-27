@@ -13,6 +13,11 @@ That said, for production applications it is always best practice to host this y
 
 ---
 
+> [!NOTE]
+> **Message to Microsoft:** This bug does not appear when you click Sign In With Google and log in fresh — that works perfectly. The bug appears when you return to the site and see your email listed as a selectable account. You click it, get the "Taking you to your organization's sign-in page" screen, and then hit the error below. If you go back, choose "Use another account → Sign in with Google", and sign in with the **exact same account**, it works fine. The reason is that Entra is sending a parameter called `username` and Google rejects it. I don't know why you send it, I don't particularly care — but the bug is brutal and makes the built-in Google identity provider nearly useless. Please fix this and make this proxy irrelevant.
+
+---
+
 ## The Problem
 
 When you configure Google as a federated identity provider in Microsoft Entra External ID and a user tries to sign in through a SignInSignUp user flow, the login fails with:
@@ -140,3 +145,11 @@ The proxy exposes two endpoints that mirror Google's OIDC interface:
 | `GET /api/auth` | Receives the auth request from Entra, strips the `username` parameter, and redirects to Google |
 
 Entra reads the discovery doc, sees the proxy's `/api/auth` as the authorization endpoint, sends the request there, and the proxy silently removes `username` before forwarding to Google.
+
+---
+
+## Differences vs. the Built-in Google Identity Provider
+
+**Pro:** Users can select a previously signed-in account from the account picker screen. If that account was originally signed in with Google, it will work correctly — no error, no workaround needed.
+
+**Con:** On the sign-in screen, the Google button will display a generic blue circle icon instead of the Google logo. This is a cosmetic side effect of using a custom OIDC provider rather than the built-in one, and may signal to observant users that something non-standard is in play.
