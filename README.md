@@ -47,6 +47,7 @@ A hosted instance of this proxy is already running. You just need to update your
 
 | Field | Value |
 |---|---|
+| Display name | `Google` |
 | Well-known endpoint | `https://google-auth-proxy.jmatthewyoung.com/api/well-known/openid-configuration` |
 | Issuer URI | `https://accounts.google.com` |
 | Client ID | *(your Client ID from Google Cloud Console)* |
@@ -111,6 +112,7 @@ Follow the same settings as Option 1, substituting your custom domain:
 
 | Field | Value |
 |---|---|
+| Display name | `Google` |
 | Well-known endpoint | `https://auth-proxy.yourdomain.com/api/well-known/openid-configuration` |
 | Issuer URI | `https://accounts.google.com` |
 | Client ID | *(your Client ID from Google Cloud Console)* |
