@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -30,48 +29,76 @@ public class GoogleAuthProxy
         [HttpTrigger(AuthorizationLevel.Anonymous, "get",
             Route = "well-known/openid-configuration")] HttpRequestData req)
     {
-        var client = _httpClientFactory.CreateClient();
-        var json = await client.GetStringAsync(GoogleWellKnown);
+        _logger.LogInformation("OidcDiscovery: request received");
+        try
+        {
+            var client = _httpClientFactory.CreateClient();
 
-        var config = JsonNode.Parse(json)!.AsObject();
+            _logger.LogInformation("OidcDiscovery: fetching Google discovery doc");
+            var json = await client.GetStringAsync(GoogleWellKnown);
+            _logger.LogInformation("OidcDiscovery: received {Length} bytes", json.Length);
 
-        // Swap authorization_endpoint to our proxy URL
-        var proxyBase = $"{req.Url.Scheme}://{req.Url.Host}";
-        if (!req.Url.IsDefaultPort)
-            proxyBase += $":{req.Url.Port}";
+            var config = JsonNode.Parse(json)!.AsObject();
 
-        config["authorization_endpoint"] = $"{proxyBase}/api/auth";
+            // Swap authorization_endpoint to point at our proxy
+            var proxyBase = $"{req.Url.Scheme}://{req.Url.Host}";
+            if (!req.Url.IsDefaultPort)
+                proxyBase += $":{req.Url.Port}";
 
-        var response = req.CreateResponse(HttpStatusCode.OK);
-        response.Headers.Add("Content-Type", "application/json");
-        await response.WriteStringAsync(config.ToJsonString());
-        return response;
+            var proxiedAuth = $"{proxyBase}/api/auth";
+            config["authorization_endpoint"] = proxiedAuth;
+            _logger.LogInformation("OidcDiscovery: set authorization_endpoint to {Endpoint}", proxiedAuth);
+
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            response.Headers.Add("Content-Type", "application/json");
+            await response.WriteStringAsync(config.ToJsonString());
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "OidcDiscovery failed: {Message}", ex.Message);
+            var err = req.CreateResponse(HttpStatusCode.InternalServerError);
+            await err.WriteStringAsync($"OidcDiscovery failed: {ex.Message}\n{ex.StackTrace}");
+            return err;
+        }
     }
 
     // Route 2: Strip the username param and redirect to real Google auth.
     [Function("GoogleAuthProxy")]
-    public HttpResponseData Auth(
+    public async Task<HttpResponseData> Auth(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get",
             Route = "auth")] HttpRequestData req)
     {
-        var incomingParams = System.Web.HttpUtility.ParseQueryString(req.Url.Query);
-
-        _logger.LogInformation("Incoming params from Entra: {Params}",
-            string.Join(", ", incomingParams.AllKeys.Select(k => $"{k}={incomingParams[k]}")));
-
-        // Remove the param Google rejects
-        incomingParams.Remove("username");
-
-        var builder = new UriBuilder(GoogleAuthEndpoint)
+        _logger.LogInformation("GoogleAuthProxy: raw query = {Query}", req.Url.Query);
+        try
         {
-            Query = incomingParams.ToString()
-        };
+            // Parse query string without System.Web dependency
+            var rawQuery = req.Url.Query.TrimStart('?');
 
-        _logger.LogInformation("Forwarding to Google: {Url}", builder.Uri);
+            var filteredParams = rawQuery
+                .Split('&', StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Split('=', 2))
+                .Where(parts => !parts[0].Equals("username", StringComparison.OrdinalIgnoreCase))
+                .Select(parts => string.Join("=", parts))
+                .ToList();
 
-        var response = req.CreateResponse(HttpStatusCode.Redirect);
-        response.Headers.Add("Location", builder.Uri.ToString());
-        response.Headers.Add("Cache-Control", "no-store");
-        return response;
+            _logger.LogInformation("GoogleAuthProxy: {Count} params after stripping username: {Params}",
+                filteredParams.Count, string.Join(", ", filteredParams));
+
+            var googleUrl = $"{GoogleAuthEndpoint}?{string.Join("&", filteredParams)}";
+            _logger.LogInformation("GoogleAuthProxy: redirecting to {Url}", googleUrl);
+
+            var response = req.CreateResponse(HttpStatusCode.Redirect);
+            response.Headers.Add("Location", googleUrl);
+            response.Headers.Add("Cache-Control", "no-store");
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GoogleAuthProxy failed: {Message}", ex.Message);
+            var err = req.CreateResponse(HttpStatusCode.InternalServerError);
+            await err.WriteStringAsync($"GoogleAuthProxy failed: {ex.Message}\n{ex.StackTrace}");
+            return err;
+        }
     }
 }
