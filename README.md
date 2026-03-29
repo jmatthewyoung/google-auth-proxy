@@ -153,3 +153,5 @@ Entra reads the discovery doc, sees the proxy's `/api/auth` as the authorization
 **Pro:** Users can select a previously signed-in account from the account picker screen. If that account was originally signed in with Google, it will work correctly — no error, no workaround needed.
 
 **Con:** On the sign-in screen, the Google button will display a generic blue circle icon instead of the Google logo. This is a cosmetic side effect of using a custom OIDC provider rather than the built-in one, and may signal to observant users that something non-standard is in play.
+
+**Con:** Because this custom OIDC provider is treated as a completely separate identity provider from the built-in Google one, any existing users who previously signed in via the built-in Google IDP will not automatically carry over. Before they can sign in through the proxy-backed provider, their account will need to be deleted or have its redemption status reset in Entra so they can re-authenticate and be associated with the new provider. This is a one-time migration cost per affected user, but worth planning for if you have existing users.
