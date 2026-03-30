@@ -1,20 +1,37 @@
 # Google Auth Proxy
+
+> Fix for **Error 400: invalid_request — Parameter not allowed for this message type: username**  
+> when using **Google sign-in** with **Microsoft Entra External ID** (formerly Azure AD B2C).
+
 ### Created by John Matthew Young
 
-A fix for the `Error 400: invalid_request — Parameter not allowed for this message type: username` error that occurs when using Google as an identity provider in Microsoft Entra External ID (formerly Azure AD B2C).
+## Also Searched As
 
----
+- `400 error Google sign in Microsoft External ID username not allowed`
+- `Entra External ID Google OAuth username parameter rejected`  
+- `invalid_request username parameter not allowed Google federated identity`
+- `Azure AD B2C Google IDP 400 error username`
+- `flowName=GeneralOAuthFlow 400 error Google sign in`
+- `Request details flowName=GeneralOAuthFlow username not allowed`
 
-## Hosted Instance
+## Related Microsoft Q&A Reports
 
-A hosted instance of this proxy is available at **https://google-auth-proxy.jmatthewyoung.com**. It runs directly off this source code and does not log, store, or inspect any data from proxied requests — it only strips the `username` parameter and redirects.
+This is a known, unresolved bug with multiple independent reports on Microsoft Q&A. 
+If you found this repo from one of these threads, this proxy is the fix:
 
-That said, for production applications it is always best practice to host this yourself so you are not depending on a third-party service for your authentication flow. Instructions for that are in Option 2 below.
+- [Encountering 400 invalid_request error during the Entra SignInSignUp user flow](https://learn.microsoft.com/en-us/answers/questions/5772507/encountering-400-invalid-request-error-during-the)
+  — the original report; Entra incorrectly passes an unsupported `username` parameter to Google's OAuth 2.0 endpoint during an Entra-orchestrated sign-in flow.
 
----
+- [Google authentication fails with 400 invalid_request when used through Microsoft Entra External ID SignInSignUp user flow](https://learn.microsoft.com/en-us/answers/questions/5780124/google-authentication-fails-with-400-invalid-reque)
+  — same failure reproduced with HAR traces confirming `username`, `wctx`, and `cbcxt` being sent by Entra. `flowName=GeneralOAuthFlow` visible in the error screen.
 
-> [!NOTE]
-> **Message to Microsoft:** This bug does not appear when you click Sign In With Google and log in fresh — that works perfectly. The bug appears when you return to the site and see your email listed as a selectable account. You click it, get the "Taking you to your organization's sign-in page" screen, and then hit the error below. If you go back, choose "Use another account → Sign in with Google", and sign in with the **exact same account**, it works fine. The reason is that Entra is sending a parameter called `username` and Google rejects it. I don't know why you send it, I don't particularly care — but the bug is brutal and makes the built-in Google identity provider nearly useless. Please fix this and make this proxy irrelevant.
+- [Entra External ID + Google Federation: username parameter causes 400 invalid_request on silent refresh](https://learn.microsoft.com/en-us/answers/questions/5822108/entra-external-id-google-federation-username-param)
+  — extends the bug report to silent token refresh: after a session expires, Entra sends `username={upn}@{tenant}.onmicrosoft.com` to Google instead of `login_hint`, forcing users to re-authenticate manually every session.
+
+- [Entra External ID + Google Federation: "username" parameter error on silent refresh (12-24h after login)](https://learn.microsoft.com/en-ie/answers/questions/5657436/entra-external-id-google-federation-username-param)
+  — same silent refresh failure appearing 12–24 hours after login; confirms the issue is not app-specific and occurs across multiple independent implementations.
+
+None of these threads have a first-party fix from Microsoft. This proxy is the working workaround.
 
 ---
 
@@ -25,6 +42,10 @@ When you configure Google as a federated identity provider in Microsoft Entra Ex
 > **Access blocked: Authorization Error**
 > Error 400: invalid_request
 > Parameter not allowed for this message type: username
+
+The error screen shows request details including `flowName=GeneralOAuthFlow`, 
+which confirms this is Entra's general OAuth flow — not a misconfiguration on 
+your end.
 
 This happens because Entra automatically appends a `username` parameter to the OAuth2 authorization request it sends to Google. Google's OAuth2 implementation does not accept this parameter and rejects the request outright.
 
@@ -41,6 +62,19 @@ Direct "Sign in with Google" flows work fine — the issue is specific to Entra-
 Both solutions below work by placing a lightweight proxy between Entra and Google. The proxy intercepts the authorization request, strips the `username` parameter, and forwards it cleanly to Google.
 
 The key change in both cases is pointing Entra's **Well-known endpoint** at the proxy instead of Google directly. Normally you would set this to Google's own discovery URL (`https://accounts.google.com/.well-known/openid-configuration`) — the proxy replaces that entry point while everything else stays the same.
+
+---
+
+## Hosted Instance
+
+A hosted instance of this proxy is available at **https://google-auth-proxy.jmatthewyoung.com**. It runs directly off this source code and does not log, store, or inspect any data from proxied requests — it only strips the `username` parameter and redirects.
+
+That said, for production applications it is always best practice to host this yourself so you are not depending on a third-party service for your authentication flow. Instructions for that are in Option 2 below.
+
+---
+
+> [!NOTE]
+> **Message to Microsoft:** This bug does not appear when you click Sign In With Google and log in fresh — that works perfectly. The bug appears when you return to the site and see your email listed as a selectable account. You click it, get the "Taking you to your organization's sign-in page" screen, and then hit the error below. If you go back, choose "Use another account → Sign in with Google", and sign in with the **exact same account**, it works fine. The reason is that Entra is sending a parameter called `username` and Google rejects it. I don't know why you send it, I don't particularly care — but the bug is brutal and makes the built-in Google identity provider nearly useless. Please fix this and make this proxy irrelevant.
 
 ---
 
