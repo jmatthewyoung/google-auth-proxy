@@ -14,6 +14,25 @@
 - `flowName=GeneralOAuthFlow 400 error Google sign in`
 - `Request details flowName=GeneralOAuthFlow username not allowed`
 
+## Related Microsoft Q&A Reports
+
+This is a known, unresolved bug with multiple independent reports on Microsoft Q&A. 
+If you found this repo from one of these threads, this proxy is the fix:
+
+- [Encountering 400 invalid_request error during the Entra SignInSignUp user flow](https://learn.microsoft.com/en-us/answers/questions/5772507/encountering-400-invalid-request-error-during-the)
+  — the original report; Entra incorrectly passes an unsupported `username` parameter to Google's OAuth 2.0 endpoint during an Entra-orchestrated sign-in flow.
+
+- [Google authentication fails with 400 invalid_request when used through Microsoft Entra External ID SignInSignUp user flow](https://learn.microsoft.com/en-us/answers/questions/5780124/google-authentication-fails-with-400-invalid-reque)
+  — same failure reproduced with HAR traces confirming `username`, `wctx`, and `cbcxt` being sent by Entra. `flowName=GeneralOAuthFlow` visible in the error screen.
+
+- [Entra External ID + Google Federation: username parameter causes 400 invalid_request on silent refresh](https://learn.microsoft.com/en-us/answers/questions/5822108/entra-external-id-google-federation-username-param)
+  — extends the bug report to silent token refresh: after a session expires, Entra sends `username={upn}@{tenant}.onmicrosoft.com` to Google instead of `login_hint`, forcing users to re-authenticate manually every session.
+
+- [Entra External ID + Google Federation: "username" parameter error on silent refresh (12-24h after login)](https://learn.microsoft.com/en-ie/answers/questions/5657436/entra-external-id-google-federation-username-param)
+  — same silent refresh failure appearing 12–24 hours after login; confirms the issue is not app-specific and occurs across multiple independent implementations.
+
+None of these threads have a first-party fix from Microsoft. This proxy is the working workaround.
+
 ---
 
 ## The Problem
