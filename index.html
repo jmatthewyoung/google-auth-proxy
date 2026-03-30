@@ -1,179 +1,234 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Google Auth Proxy — Fix for Entra ID + Google Sign-In Error 400</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="google-site-verification" content="Bn5g4gx_8qyh-AuX3wxq1zNCPyL194P27Cf6eDiLMBE" />
+    <title>Google Auth Proxy — Fix for Entra ID + Google Sign-In Error 400</title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f6f8fa;
-      color: #24292f;
-      line-height: 1.6;
-    }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f6f8fa;
+            color: #24292f;
+            line-height: 1.6;
+        }
 
-    header {
-      background: #fff;
-      border-bottom: 1px solid #d0d7de;
-      padding: 1.5rem 2rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
+        header {
+            background: #fff;
+            border-bottom: 1px solid #d0d7de;
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
 
-    header svg { flex-shrink: 0; }
+            header svg {
+                flex-shrink: 0;
+            }
 
-    header h1 {
-      font-size: 1.4rem;
-      font-weight: 600;
-    }
+            header h1 {
+                font-size: 1.4rem;
+                font-weight: 600;
+            }
 
-    header p {
-      font-size: 0.875rem;
-      color: #57606a;
-    }
+            header p {
+                font-size: 0.875rem;
+                color: #57606a;
+            }
 
-    .container {
-      max-width: 860px;
-      margin: 2rem auto;
-      padding: 0 1.5rem;
-    }
+        .container {
+            max-width: 860px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
 
-    .error-banner {
-      background: #fff8c5;
-      border: 1px solid #d4a72c;
-      border-radius: 8px;
-      padding: 1rem 1.25rem;
-      margin-bottom: 2rem;
-      font-size: 0.95rem;
-    }
+        .error-banner {
+            background: #fff8c5;
+            border: 1px solid #d4a72c;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
 
-    .error-banner strong { display: block; margin-bottom: 0.25rem; font-size: 1rem; }
+            .error-banner strong {
+                display: block;
+                margin-bottom: 0.25rem;
+                font-size: 1rem;
+            }
 
-    section { margin-bottom: 2.5rem; }
+        section {
+            margin-bottom: 2.5rem;
+        }
 
-    h2 {
-      font-size: 1.2rem;
-      font-weight: 600;
-      border-bottom: 1px solid #d0d7de;
-      padding-bottom: 0.4rem;
-      margin-bottom: 1rem;
-    }
+        h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-bottom: 1px solid #d0d7de;
+            padding-bottom: 0.4rem;
+            margin-bottom: 1rem;
+        }
 
-    h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin: 1.25rem 0 0.5rem;
-    }
+        h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 1.25rem 0 0.5rem;
+        }
 
-    p { margin-bottom: 0.75rem; }
+        p {
+            margin-bottom: 0.75rem;
+        }
 
-    a { color: #0969da; text-decoration: none; }
-    a:hover { text-decoration: underline; }
+        a {
+            color: #0969da;
+            text-decoration: none;
+        }
 
-    .card {
-      background: #fff;
-      border: 1px solid #d0d7de;
-      border-radius: 8px;
-      padding: 1.25rem 1.5rem;
-      margin-bottom: 1rem;
-    }
+            a:hover {
+                text-decoration: underline;
+            }
 
-    .card h3 { margin-top: 0; }
+        .card {
+            background: #fff;
+            border: 1px solid #d0d7de;
+            border-radius: 8px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1rem;
+        }
 
-    .badge {
-      display: inline-block;
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 0.15rem 0.55rem;
-      border-radius: 20px;
-      margin-left: 0.5rem;
-      vertical-align: middle;
-    }
+            .card h3 {
+                margin-top: 0;
+            }
 
-    .badge-green  { background: #dafbe1; color: #1a7f37; }
-    .badge-yellow { background: #fff8c5; color: #9a6700; }
+        .badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.15rem 0.55rem;
+            border-radius: 20px;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-      margin: 0.75rem 0;
-    }
+        .badge-green {
+            background: #dafbe1;
+            color: #1a7f37;
+        }
 
-    th, td {
-      text-align: left;
-      padding: 0.5rem 0.75rem;
-      border: 1px solid #d0d7de;
-    }
+        .badge-yellow {
+            background: #fff8c5;
+            color: #9a6700;
+        }
 
-    th { background: #f6f8fa; font-weight: 600; }
-    td code { background: #f6f8fa; padding: 0.1rem 0.3rem; border-radius: 4px; font-size: 0.85rem; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            margin: 0.75rem 0;
+        }
 
-    code, pre {
-      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-    }
+        th, td {
+            text-align: left;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d0d7de;
+        }
 
-    pre {
-      background: #f6f8fa;
-      border: 1px solid #d0d7de;
-      border-radius: 6px;
-      padding: 1rem 1.25rem;
-      overflow-x: auto;
-      font-size: 0.875rem;
-      margin: 0.75rem 0;
-    }
+        th {
+            background: #f6f8fa;
+            font-weight: 600;
+        }
 
-    ol, ul { padding-left: 1.5rem; }
-    li { margin-bottom: 0.4rem; }
+        td code {
+            background: #f6f8fa;
+            padding: 0.1rem 0.3rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
 
-    .flow {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      font-size: 0.9rem;
-      margin: 0.75rem 0;
-    }
+        code, pre {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        }
 
-    .flow-step {
-      background: #fff;
-      border: 1px solid #d0d7de;
-      border-radius: 6px;
-      padding: 0.35rem 0.75rem;
-      white-space: nowrap;
-    }
+        pre {
+            background: #f6f8fa;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            padding: 1rem 1.25rem;
+            overflow-x: auto;
+            font-size: 0.875rem;
+            margin: 0.75rem 0;
+        }
 
-    .flow-arrow { color: #57606a; font-size: 1.1rem; }
+        ol, ul {
+            padding-left: 1.5rem;
+        }
 
-    .note {
-      background: #ddf4ff;
-      border: 1px solid #54aeff;
-      border-radius: 6px;
-      padding: 0.75rem 1rem;
-      font-size: 0.9rem;
-      margin: 0.75rem 0;
-    }
+        li {
+            margin-bottom: 0.4rem;
+        }
 
-    .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .flow {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            font-size: 0.9rem;
+            margin: 0.75rem 0;
+        }
 
-    @media (max-width: 600px) {
-      .pros-cons { grid-template-columns: 1fr; }
-    }
+        .flow-step {
+            background: #fff;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            padding: 0.35rem 0.75rem;
+            white-space: nowrap;
+        }
 
-    .pros-cons .card { margin-bottom: 0; }
+        .flow-arrow {
+            color: #57606a;
+            font-size: 1.1rem;
+        }
 
-    footer {
-      text-align: center;
-      padding: 2rem;
-      font-size: 0.85rem;
-      color: #57606a;
-      border-top: 1px solid #d0d7de;
-      margin-top: 3rem;
-    }
-  </style>
+        .note {
+            background: #ddf4ff;
+            border: 1px solid #54aeff;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            margin: 0.75rem 0;
+        }
+
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            .pros-cons {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pros-cons .card {
+            margin-bottom: 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.85rem;
+            color: #57606a;
+            border-top: 1px solid #d0d7de;
+            margin-top: 3rem;
+        }
+    </style>
 </head>
 <body>
 
