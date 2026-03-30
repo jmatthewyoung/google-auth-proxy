@@ -1,5 +1,5 @@
 # Google Auth Proxy
-### by John Matthew Young
+### Created by John Matthew Young
 
 A fix for the `Error 400: invalid_request — Parameter not allowed for this message type: username` error that occurs when using Google as an identity provider in Microsoft Entra External ID (formerly Azure AD B2C).
 
