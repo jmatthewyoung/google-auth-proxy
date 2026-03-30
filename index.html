@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google Auth Proxy — Fix for Entra ID + Google Sign-In Error 400</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f6f8fa;
+      color: #24292f;
+      line-height: 1.6;
+    }
+
+    header {
+      background: #fff;
+      border-bottom: 1px solid #d0d7de;
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    header svg { flex-shrink: 0; }
+
+    header h1 {
+      font-size: 1.4rem;
+      font-weight: 600;
+    }
+
+    header p {
+      font-size: 0.875rem;
+      color: #57606a;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    .error-banner {
+      background: #fff8c5;
+      border: 1px solid #d4a72c;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+
+    .error-banner strong { display: block; margin-bottom: 0.25rem; font-size: 1rem; }
+
+    section { margin-bottom: 2.5rem; }
+
+    h2 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      border-bottom: 1px solid #d0d7de;
+      padding-bottom: 0.4rem;
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 1.25rem 0 0.5rem;
+    }
+
+    p { margin-bottom: 0.75rem; }
+
+    a { color: #0969da; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .card {
+      background: #fff;
+      border: 1px solid #d0d7de;
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .card h3 { margin-top: 0; }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.15rem 0.55rem;
+      border-radius: 20px;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    .badge-green  { background: #dafbe1; color: #1a7f37; }
+    .badge-yellow { background: #fff8c5; color: #9a6700; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin: 0.75rem 0;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #d0d7de;
+    }
+
+    th { background: #f6f8fa; font-weight: 600; }
+    td code { background: #f6f8fa; padding: 0.1rem 0.3rem; border-radius: 4px; font-size: 0.85rem; }
+
+    code, pre {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    pre {
+      background: #f6f8fa;
+      border: 1px solid #d0d7de;
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: 0.875rem;
+      margin: 0.75rem 0;
+    }
+
+    ol, ul { padding-left: 1.5rem; }
+    li { margin-bottom: 0.4rem; }
+
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      font-size: 0.9rem;
+      margin: 0.75rem 0;
+    }
+
+    .flow-step {
+      background: #fff;
+      border: 1px solid #d0d7de;
+      border-radius: 6px;
+      padding: 0.35rem 0.75rem;
+      white-space: nowrap;
+    }
+
+    .flow-arrow { color: #57606a; font-size: 1.1rem; }
+
+    .note {
+      background: #ddf4ff;
+      border: 1px solid #54aeff;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      margin: 0.75rem 0;
+    }
+
+    .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    @media (max-width: 600px) {
+      .pros-cons { grid-template-columns: 1fr; }
+    }
+
+    .pros-cons .card { margin-bottom: 0; }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.85rem;
+      color: #57606a;
+      border-top: 1px solid #d0d7de;
+      margin-top: 3rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <rect width="36" height="36" rx="8" fill="#0969da"/>
+    <path d="M10 18 L18 10 L26 18 L22 18 L22 26 L14 26 L14 18 Z" fill="white" opacity="0.9"/>
+  </svg>
+  <div>
+    <h1>Google Auth Proxy</h1>
+    <p>Fix for Microsoft Entra External ID + Google Sign-In &mdash; <em>by John Matthew Young</em></p>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="error-banner">
+    <strong>Error 400: invalid_request &mdash; Parameter not allowed for this message type: username</strong>
+    If you hit this error when using Google sign-in with Microsoft Entra External ID (formerly Azure AD B2C), you're in the right place.
+  </div>
+
+  <!-- The Problem -->
+  <section>
+    <h2>The Problem</h2>
+    <p>
+      When Google is configured as a federated identity provider in Microsoft Entra External ID, sign-in fails with
+      <strong>Error 400: invalid_request</strong> when a user selects a previously signed-in account from the account picker.
+      The error includes <code>flowName=GeneralOAuthFlow</code> in the request details.
+    </p>
+    <p>
+      The root cause: Entra automatically appends a <code>username</code> parameter to the OAuth2 authorization
+      request it sends to Google. Google's OAuth2 implementation rejects this parameter outright.
+      Direct "Sign in with Google" flows work fine &mdash; the issue is specific to Entra-orchestrated flows.
+    </p>
+  </section>
+
+  <!-- The Fix -->
+  <section>
+    <h2>The Fix</h2>
+    <p>
+      A lightweight proxy sits between Entra and Google. It intercepts the authorization request,
+      strips the <code>username</code> parameter, and forwards the cleaned request to Google.
+      The only Entra configuration change is pointing the <strong>Well-known endpoint</strong> at the proxy
+      instead of Google directly.
+    </p>
+
+    <div class="flow">
+      <span class="flow-step">Entra ID</span>
+      <span class="flow-arrow">&#8594;</span>
+      <span class="flow-step">GET /.well-known/openid-configuration</span>
+      <span class="flow-arrow">&#8594;</span>
+      <span class="flow-step">Proxy (modified OIDC doc)</span>
+    </div>
+    <div class="flow">
+      <span class="flow-step">Entra ID</span>
+      <span class="flow-arrow">&#8594;</span>
+      <span class="flow-step">GET /api/auth?…&amp;username=…</span>
+      <span class="flow-arrow">&#8594;</span>
+      <span class="flow-step">Proxy strips username</span>
+      <span class="flow-arrow">&#8594;</span>
+      <span class="flow-step">302 to Google</span>
+    </div>
+  </section>
+
+  <!-- Options -->
+  <section>
+    <h2>Options</h2>
+
+    <!-- Option 1 -->
+    <div class="card">
+      <h3>Option 1 &mdash; Use the Hosted Proxy <span class="badge badge-yellow">Development / Less Secure</span></h3>
+      <p>
+        A hosted instance is running at
+        <a href="https://google-auth-proxy.jmatthewyoung.com" target="_blank" rel="noopener">google-auth-proxy.jmatthewyoung.com</a>.
+        It does not log, store, or inspect any data &mdash; it only strips the <code>username</code> parameter and redirects.
+        For production, self-hosting (Option 2) is recommended.
+      </p>
+
+      <h3>Steps</h3>
+      <ol>
+        <li>In the <a href="https://portal.azure.com" target="_blank" rel="noopener">Azure Portal</a>, go to <strong>Entra External ID → External Identities → All identity providers</strong>.</li>
+        <li>Select the <strong>Custom</strong> tab — do <em>not</em> use the built-in Google provider. The built-in one does not allow overriding the well-known endpoint.</li>
+        <li>Click <strong>Add new → OpenID Connect</strong>.</li>
+        <li>Fill in the settings below. Setting <strong>Display name</strong> to <code>Google</code> will label the sign-in button correctly.</li>
+      </ol>
+
+      <table>
+        <thead><tr><th>Field</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Display name</td><td><code>Google</code></td></tr>
+          <tr><td>Well-known endpoint</td><td><code>https://google-auth-proxy.jmatthewyoung.com/api/well-known/openid-configuration</code></td></tr>
+          <tr><td>Issuer URI</td><td><code>https://accounts.google.com</code></td></tr>
+          <tr><td>Client ID</td><td><em>Your Client ID from Google Cloud Console</em></td></tr>
+          <tr><td>Client Authentication Method</td><td>Client secret</td></tr>
+          <tr><td>Client Secret</td><td><em>Your Client Secret from Google Cloud Console</em></td></tr>
+          <tr><td>Scope</td><td><code>openid profile email</code></td></tr>
+          <tr><td>Response Type</td><td><code>code</code></td></tr>
+        </tbody>
+      </table>
+
+      <li>Save the configuration and test your sign-in flow.</li>
+    </div>
+
+    <!-- Option 2 -->
+    <div class="card">
+      <h3>Option 2 &mdash; Self-Hosted on Azure Functions <span class="badge badge-green">Production / Recommended</span></h3>
+      <p>Deploy your own instance for full control over the infrastructure.</p>
+
+      <h3>Prerequisites</h3>
+      <ul>
+        <li><a href="https://dotnet.microsoft.com/download" target="_blank" rel="noopener">.NET 8.0 SDK</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local" target="_blank" rel="noopener">Azure Functions Core Tools</a></li>
+        <li>An Azure subscription with permissions to create a Function App</li>
+      </ul>
+
+      <h3>Run Locally</h3>
+      <pre>git clone https://github.com/jmatthewyoung/google-auth-proxy.git
+cd google-auth-proxy
+dotnet run --project GoogleAuthProxy/GoogleAuthProxy.csproj</pre>
+      <p>Verify it's working: <code>http://localhost:7136/api/well-known/openid-configuration</code></p>
+
+      <h3>Deploy to Azure</h3>
+      <ol>
+        <li>Create a Function App (Runtime: .NET 8, OS: Windows or Linux).</li>
+        <li>Deploy:
+          <pre>func azure functionapp publish &lt;YOUR_FUNCTION_APP_NAME&gt;</pre>
+          Or publish from Visual Studio via <strong>Right-click project → Publish</strong>.
+        </li>
+        <li>
+          <strong>Important: use a custom domain.</strong> Do not use the default <code>*.azurewebsites.net</code> URL &mdash;
+          Chrome will show a "Dangerous site" warning for that domain during the OAuth redirect.
+          Set up a custom domain (e.g. <code>auth-proxy.yourdomain.com</code>) and use that as your proxy URL.
+        </li>
+      </ol>
+
+      <h3>Configure Entra</h3>
+      <p>Follow the same steps as Option 1, replacing the well-known endpoint with your custom domain:</p>
+      <table>
+        <thead><tr><th>Field</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Well-known endpoint</td><td><code>https://auth-proxy.yourdomain.com/api/well-known/openid-configuration</code></td></tr>
+          <tr><td colspan="2"><em>(all other fields are identical to Option 1)</em></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Proxy Endpoints -->
+  <section>
+    <h2>Proxy Endpoints</h2>
+    <table>
+      <thead><tr><th>Endpoint</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>GET /api/well-known/openid-configuration</code></td>
+          <td>Returns Google's OIDC discovery doc with <code>authorization_endpoint</code> rewritten to point to the proxy</td>
+        </tr>
+        <tr>
+          <td><code>GET /api/auth</code></td>
+          <td>Receives the auth request from Entra, strips the <code>username</code> parameter, and 302-redirects to Google</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Trade-offs -->
+  <section>
+    <h2>Trade-offs vs. Built-in Google Identity Provider</h2>
+    <div class="pros-cons">
+      <div class="card">
+        <h3>Pro</h3>
+        <p>Users can select a previously signed-in Google account from the account picker without hitting the error.</p>
+      </div>
+      <div class="card">
+        <h3>Cons</h3>
+        <ul>
+          <li>The Google sign-in button shows a generic blue circle icon instead of the Google logo.</li>
+          <li>Existing users who signed in via the built-in Google IDP must have their account deleted or redemption status reset before they can use the proxy-backed provider. One-time migration cost per affected user.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Note to Microsoft -->
+  <section>
+    <h2>Note to Microsoft</h2>
+    <div class="note">
+      This bug does not appear when clicking Sign In With Google fresh &mdash; that works fine.
+      It appears when a user returns and selects their email from the account picker, goes through
+      "Taking you to your organization's sign-in page", and then hits the error.
+      Going back and choosing "Use another account → Sign in with Google" with the <em>exact same account</em> works.
+      The cause is Entra appending a <code>username</code> parameter that Google rejects.
+      Please fix this and make this proxy unnecessary.
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <p>
+    <a href="https://github.com/jmatthewyoung/google-auth-proxy" target="_blank" rel="noopener">View on GitHub</a>
+    &nbsp;&middot;&nbsp;
+    Created by John Matthew Young
+  </p>
+</footer>
+
+</body>
+</html>
